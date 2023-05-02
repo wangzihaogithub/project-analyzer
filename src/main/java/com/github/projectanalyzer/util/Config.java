@@ -8,12 +8,10 @@ import java.util.jar.JarEntry;
 
 public class Config {
     private final Set<String> bizPackagePath = new LinkedHashSet<>(Arrays.asList(
-//            "com/ig",
-//            "com/zhipin"
+//            "com/myxx",
     ));
     private final Set<String> dubboExportAnnotations = new LinkedHashSet<>(Arrays.asList(
-//            "Lcom/ig/annotation/IGService;",
-//            "Lcom/ig/annotation/BossZpService;",
+//            "Lcom/ig/annotation/MyxxxService;",
             "Lorg/apache/dubbo/config/annotation/DubboService;",
             "Lorg/apache/dubbo/config/annotation/Service;",
             "Lcom/alibaba/dubbo/config/annotation/Service;"
