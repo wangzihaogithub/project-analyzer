@@ -404,28 +404,28 @@ public class JavaClassFile {
     }
 
     public static class ConstantPool {
-        private ConstantInfo[] constants;
+        private final ConstantInfo[] constants;
 
         public ConstantPool(int constantPoolCount, ClassReader reader) {
             constants = new ConstantInfo[constantPoolCount];
             // The constant_pool table is indexed from 1 to constant_pool_count - 1.
             for (int i = 1; i < constantPoolCount; i++) {
-                ConstantInfo constantInfo = readConstantInfo(i, reader);
+                int tag = reader.readUint8();
+                ConstantInfo constantInfo = readConstantInfo(i, tag, reader);
                 constants[i] = constantInfo;
                 // http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.4.5
                 // All 8-byte constants take up two entries in the constant_pool table of the class file.
                 // If a CONSTANT_Long_info or CONSTANT_Double_info structure is the item in the constant_pool
                 // table at index n, then the next usable item in the pool is located at index n+2.
                 // The constant_pool index n+1 must be valid but is considered unusable.
-                if (constantInfo instanceof ConstantDoubleInfo
-                        || constantInfo instanceof ConstantLongInfo) {
+                if (tag == ConstantInfo.CONSTANT_DOUBLE
+                        || tag == ConstantInfo.CONSTANT_LONG) {
                     i++;
                 }
             }
         }
 
-        private ConstantInfo readConstantInfo(int index, ClassReader reader) {
-            int tag = reader.readUint8();
+        private ConstantInfo readConstantInfo(int index, int tag, ClassReader reader) {
             ConstantInfo constantInfo;
             switch (tag) {
                 case ConstantInfo.CONSTANT_INTEGER:
@@ -888,7 +888,7 @@ public class JavaClassFile {
 
             @Override
             public int length() {
-                return 0;
+                return memberRefInfo.length();
             }
 
             @Override
@@ -962,7 +962,7 @@ public class JavaClassFile {
 
             @Override
             public int length() {
-                return 0;
+                return memberRefInfo.length();
             }
 
             @Override
@@ -996,7 +996,7 @@ public class JavaClassFile {
 
             @Override
             public int length() {
-                return 0;
+                return memberRefInfo.length();
             }
 
             @Override
@@ -1202,7 +1202,7 @@ public class JavaClassFile {
 
             @Override
             public int length() {
-                return 8;
+                return 4;
             }
 
             @Override
