@@ -23,21 +23,19 @@ public class ExportDubboMethodProjectStat extends ClassProjectStat {
     }
 
     @Override
-    public Map<String, Object> groupBy(Map<String, JavaClassFile> javaProject,
-                                       Map<String, List<JavaClassFile>> interfaceMap,
-                                       List<ClassProjectStat> importProject) {
+    public Map<String, Object> groupBy(ClassPool classPool) {
         Map<String, Object> map = new LinkedHashMap<>();
-        for (JavaClassFile javaClassFile : javaProject.values()) {
+        for (JavaClassFile javaClassFile : classPool.javaProject.values()) {
             if (!Util.isDubboClass(javaClassFile, config.getDubboExportAnnotations())) {
                 continue;
             }
             JavaClassFile.Member[] methods = javaClassFile.getMethods();
             for (JavaClassFile.Member method : methods) {
-                if (!Util.isDubboMethod(method, javaProject, importProject)) {
+                if (!Util.isDubboMethod(method,classPool)) {
                     continue;
                 }
-                String mapKey = mapKey(method, javaClassFile, javaProject, interfaceMap, importProject);
-                Object reduce = reduce(method, javaClassFile, javaProject, interfaceMap, importProject, map.get(mapKey));
+                String mapKey = mapKey(method, javaClassFile, classPool);
+                Object reduce = reduce(method, javaClassFile, classPool, map.get(mapKey));
                 map.put(mapKey, reduce);
             }
         }
@@ -46,17 +44,13 @@ public class ExportDubboMethodProjectStat extends ClassProjectStat {
 
     protected String mapKey(JavaClassFile.Member method,
                             JavaClassFile javaClassFile,
-                            Map<String, JavaClassFile> javaProject,
-                            Map<String, List<JavaClassFile>> interfaceMap,
-                            List<ClassProjectStat> importProject) {
+                            ClassPool classPool) {
         return "Dubbo";
     }
 
     protected Object reduce(JavaClassFile.Member method,
                             JavaClassFile javaClassFile,
-                            Map<String, JavaClassFile> javaProject,
-                            Map<String, List<JavaClassFile>> interfaceMap,
-                            List<ClassProjectStat> importProject,
+                            ClassPool classPool,
                             Object beforeValue) {
         Counter counter;
         if (beforeValue != null) {

@@ -6,6 +6,82 @@ import java.util.*;
 
 public class Util {
 
+    public enum Scope {
+        className,
+        classPath,
+        any
+    }
+
+    public static boolean isService(String className) {
+        return className.endsWith("Service") || className.endsWith("Serivce");
+    }
+
+    public static boolean isMybatis(String className, JavaClassFile file, List<JavaClassFile> projectClass, ClassProjectStat.ClassPool classPool) {
+        Set<String> list = new HashSet<>(Arrays.asList("mybatis", "ibatis", "dao"));
+        for (String s : className.split("/")) {
+            if (list.contains(s)) {
+                return true;
+            }
+        }
+        String[] thisClassNames = file.getThisClassName().split("/");
+        for (String s : thisClassNames) {
+            if (list.contains(s)) {
+                return true;
+            }
+        }
+        return projectClass.stream()
+                .anyMatch(e -> e.isInterface()
+                        && Util.existKeyword(e, classPool, list, Util.Scope.classPath));
+    }
+
+    public static boolean existKeyword(JavaClassFile file,
+                                       ClassProjectStat.ClassPool classPool,
+                                       Collection<String> keywords,
+                                       Scope scope
+    ) {
+        if (file == null) {
+            return false;
+        }
+        String[] interfaceNames = file.getInterfaceNames();
+        for (String interfaceName : interfaceNames) {
+            String[] split = interfaceName.split("/");
+            switch (scope) {
+                case any: {
+                    for (String s : split) {
+                        for (String keyword : keywords) {
+                            if (s.equals(keyword)) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                }
+                case classPath: {
+                    for (int i = 0; i < split.length - 1; i++) {
+                        for (String keyword : keywords) {
+                            if (split[i].equals(keyword)) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                }
+                case className: {
+                    for (String keyword : keywords) {
+                        if (split[split.length - 1].equals(keyword)) {
+                            return true;
+                        }
+                    }
+                    break;
+                }
+            }
+            if (existKeyword(classPool.forName(interfaceName), classPool, keywords, scope)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isBizClass(String className, Collection<String> bizList) {
         for (String biz : bizList) {
             if (className.startsWith(biz)) {
@@ -16,15 +92,14 @@ public class Util {
     }
 
     public static boolean isDubboMethod(JavaClassFile.Member method,
-                                        Map<String, JavaClassFile> javaProject,
-                                        List<ClassProjectStat> importProject) {
+                                        ClassProjectStat.ClassPool classPool) {
         if (method.isStatic() || method.isConstructor()) {
             return false;
         }
 
         JavaClassFile classFile = method.getDeclaringClassFile();
         for (String interfaceName : classFile.getInterfaceNames()) {
-            JavaClassFile interfaceClassFile = ClassProjectStat.getJavaClassFile(interfaceName, javaProject, importProject);
+            JavaClassFile interfaceClassFile = ClassProjectStat.getJavaClassFile(interfaceName, classPool);
             if (interfaceClassFile == null) {
                 return true;
             }

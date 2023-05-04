@@ -15,8 +15,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 public class ClassProjectStat {
-    protected Map<String, JavaClassFile> javaProject;
-    protected Map<String, List<JavaClassFile>> interfaceMap;
+    protected ClassPool classPool;
     protected final List<ClassProjectStat> importProject = new ArrayList<>();
     protected Config config = new Config();
     private Map<String, ?> groupBy;
@@ -45,16 +44,15 @@ public class ClassProjectStat {
         this.config = config;
         try (JarFile jarFile = new JarFile(jarFileString)) {
             List<JarEntry> jarEntryList = getJarEntryList(jarFile);
-            javaProject = getJavaProject(jarFile, jarEntryList);
-            interfaceMap = interfaceMap(javaProject);
+            Map<String, JavaClassFile> javaProject = getJavaProject(jarFile, jarEntryList);
+            classPool = new ClassPool(javaProject, interfaceMap(javaProject), importProject);
         }
-        groupBy = groupBy(javaProject, interfaceMap, importProject);
+
+        groupBy = groupBy(classPool);
         return this;
     }
 
-    protected Map<String, Object> groupBy(Map<String, JavaClassFile> javaProject,
-                                          Map<String, List<JavaClassFile>> interfaceMap,
-                                          List<ClassProjectStat> importProject) {
+    protected Map<String, Object> groupBy(ClassPool classPool) {
         return null;
     }
 
@@ -123,12 +121,11 @@ public class ClassProjectStat {
     }
 
     public static JavaClassFile getJavaClassFile(String className,
-                                                 Map<String, JavaClassFile> javaProject,
-                                                 List<ClassProjectStat> importProject) {
-        JavaClassFile javaClassFile = javaProject.get(className);
+                                                 ClassPool classPool) {
+        JavaClassFile javaClassFile = classPool.javaProject.get(className);
         if (javaClassFile == null) {
-            for (ClassProjectStat classProjectStat : importProject) {
-                javaClassFile = getJavaClassFile(className, classProjectStat.javaProject, classProjectStat.importProject);
+            for (ClassProjectStat classProjectStat : classPool.importProject) {
+                javaClassFile = getJavaClassFile(className, classProjectStat.classPool);
                 if (javaClassFile != null) {
                     break;
                 }
@@ -140,4 +137,61 @@ public class ClassProjectStat {
     private static boolean isClassFile(JarEntry jarEntry) {
         return jarEntry.getName().endsWith(".class");
     }
+
+    public static class ClassPool {
+        public final Map<String, JavaClassFile> javaProject;
+        public final Map<String, List<JavaClassFile>> interfaceMap;
+        public final List<ClassProjectStat> importProject;
+
+        public ClassPool(Map<String, JavaClassFile> javaProject, Map<String, List<JavaClassFile>> interfaceMap, List<ClassProjectStat> importProject) {
+            this.javaProject = javaProject;
+            this.interfaceMap = interfaceMap;
+            this.importProject = importProject;
+        }
+
+        public JavaClassFile forName(String className) {
+            return forName(className, this);
+        }
+
+        private static JavaClassFile forName(String className,
+                                             ClassPool classPool) {
+            JavaClassFile file = classPool.javaProject.get(className);
+            if (file != null) {
+                return file;
+            }
+            for (ClassProjectStat projectStat : classPool.importProject) {
+                // !!这里认为不会出现循环相互依赖jar包，项目里禁止
+                file = forName(className, projectStat.classPool);
+                if (file != null) {
+                    return file;
+                }
+            }
+            return null;
+        }
+
+        public List<JavaClassFile> projectClass(String className) {
+            return projectClass(className, this);
+        }
+
+        private static List<JavaClassFile> projectClass(String className,
+                                                        ClassPool classPool) {
+            JavaClassFile file = classPool.javaProject.get(className);
+            if (file != null) {
+                return Collections.singletonList(file);
+            }
+            List<JavaClassFile> list = classPool.interfaceMap.get(className);
+            if (list != null && list.size() > 0) {
+                return list;
+            }
+            for (ClassProjectStat projectStat : classPool.importProject) {
+                // !!这里认为不会出现循环相互依赖jar包，项目里禁止
+                List<JavaClassFile> fileList = projectClass(className, projectStat.classPool);
+                if (fileList != null) {
+                    return fileList;
+                }
+            }
+            return null;
+        }
+    }
+
 }
