@@ -7,6 +7,9 @@ import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 
 public class Config {
+    private final Set<String> daoPackagePath = new LinkedHashSet<>(Arrays.asList(
+            "mybatis", "ibatis", "dao"
+    ));
     private final Set<String> bizPackagePath = new LinkedHashSet<>(Arrays.asList(
 //            "com/myxx",
     ));
@@ -44,6 +47,15 @@ public class Config {
     public Config jarEntryFilter(Predicate<JarEntry> jarEntryFilter) {
         this.jarEntryFilter = jarEntryFilter;
         return this;
+    }
+
+    public Config daoPackagePath(String... paths) {
+        daoPackagePath.addAll(Arrays.asList(paths));
+        return this;
+    }
+
+    public Set<String> getDaoPackagePath() {
+        return daoPackagePath;
     }
 
     public Set<String> getBizPackagePath() {

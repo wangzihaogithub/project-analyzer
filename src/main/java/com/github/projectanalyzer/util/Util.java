@@ -2,7 +2,10 @@ package com.github.projectanalyzer.util;
 
 import com.github.projectanalyzer.ClassProjectStat;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public class Util {
 
@@ -16,22 +19,24 @@ public class Util {
         return className.endsWith("Service") || className.endsWith("Serivce");
     }
 
-    public static boolean isMybatis(String className, JavaClassFile file, List<JavaClassFile> projectClass, ClassProjectStat.ClassPool classPool) {
-        Set<String> list = new HashSet<>(Arrays.asList("mybatis", "ibatis", "dao"));
+    public static boolean isMybatis(String className, JavaClassFile file,
+                                    List<JavaClassFile> projectClass,
+                                    ClassProjectStat.ClassPool classPool,
+                                    Set<String> keyword) {
         for (String s : className.split("/")) {
-            if (list.contains(s)) {
+            if (keyword.contains(s)) {
                 return true;
             }
         }
         String[] thisClassNames = file.getThisClassName().split("/");
         for (String s : thisClassNames) {
-            if (list.contains(s)) {
+            if (keyword.contains(s)) {
                 return true;
             }
         }
         return projectClass.stream()
                 .anyMatch(e -> e.isInterface()
-                        && Util.existKeyword(e, classPool, list, Util.Scope.classPath));
+                        && Util.existKeyword(e, classPool, keyword, Util.Scope.classPath));
     }
 
     public static boolean existKeyword(JavaClassFile file,

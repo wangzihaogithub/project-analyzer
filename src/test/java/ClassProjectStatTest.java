@@ -12,6 +12,7 @@ import java.util.List;
 public class ClassProjectStatTest {
     private static final Class<?> loader = ClassProjectStatTest.class;
     private static final Config config = new Config()
+            .daoPackagePath("mybatis", "ibatis", "dao")
             .bizPackagePath("com/ig", "com/zhipin", "com/techwolf", "cn/techwolf")
             .dubboExportAnnotations("Lcom/ig/annotation/IGService;", "Lcom/ig/annotation/BossZpService;");
 

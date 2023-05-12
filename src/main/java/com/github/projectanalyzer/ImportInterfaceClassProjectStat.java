@@ -127,8 +127,8 @@ public class ImportInterfaceClassProjectStat extends ClassProjectStat {
                 String className = memberRefInfo.className();
                 List<JavaClassFile> projectClass = classPool.projectClass(className);
                 if (projectClass != null) {
-                    if (Util.isMybatis(className, javaClassFile, projectClass, classPool)) {
-                        return "调用Mybatis";
+                    if (Util.isMybatis(className, javaClassFile, projectClass, classPool, config.getDaoPackagePath())) {
+                        return "调用数据库";
                     } else if (Util.isService(className)) {
                         return "调用内部服务";
                     } else {
